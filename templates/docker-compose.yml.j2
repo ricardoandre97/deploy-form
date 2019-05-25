@@ -1,0 +1,22 @@
+version: '3'
+services:
+  api:
+    image: app-api
+    container_name: app-api
+    env_file: .env
+    build:
+      context: .
+    ports:
+      - "8080:5000"
+    networks:
+      - net
+  db:
+    image: postgres:11.3-alpine
+    container_name: app-db
+    env_file: .env
+    networks:
+      - net
+    volumes:
+      - ./app.sql:/docker-entrypoint-initdb.d/app.sql
+networks:
+  net:

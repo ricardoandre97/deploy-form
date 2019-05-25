@@ -1,0 +1,6 @@
+[all:vars]
+ansible_connection = ssh
+ansible_user = centos
+ 
+[test]
+app_host ansible_host=35.171.121.237 ansible_private_key_file=/home/ricardo/aws_linuxfacilito.pem

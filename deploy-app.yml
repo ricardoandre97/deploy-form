@@ -1,0 +1,37 @@
+---
+- hosts: app_host
+  vars:
+    app_path: /opt/sample-form
+  tasks:
+    - name: Updates the app's code
+      git:
+        repo: https://github.com/ricardoandre97/sample-form.git
+        dest: "{{ app_path }}"
+        force: yes
+        version: master
+      tags: deploy
+
+    - name: Put the required templates
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "0644"
+      with_items:
+        - {"src": "docker-compose.yml.j2", "dest": "{{ app_path }}/docker-compose.yml"}
+        - {"src": ".env.j2", "dest": "{{ app_path }}/.env"}
+        - {"src": "Dockerfile.j2", "dest": "{{ app_path }}/Dockerfile"}
+        - {"src": "app.sql.j2", "dest": "{{ app_path }}/app.sql"}
+
+    # The docker_compose module is not used since it randomly fails
+    - name: Build images
+      shell: "/usr/local/bin/docker-compose build"
+      args:
+        chdir: "{{ app_path }}"
+
+    - name: Run services
+      shell: "/usr/local/bin/docker-compose up -d"
+      args:
+        chdir: "{{ app_path }}"
+
+
+

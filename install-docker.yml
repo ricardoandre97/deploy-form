@@ -1,0 +1,58 @@
+---
+- hosts: app_host
+  tasks:
+    - name: Download Docker repo
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: '0644'
+
+    - name: Ensure latest docker version is installed
+      yum:
+        name: 
+          - 'docker-ce'
+          - 'docker-ce-cli'
+          - 'containerd.io'
+          - 'python-docker-py'
+        state: present
+        enablerepo: docker-ce-stable
+      notify:
+        - restart docker
+
+    - name: Ensure git is installed
+      yum:
+        name: 
+          - 'git'
+        state: present
+        enablerepo: docker-ce-stable
+
+    - name: Check if docker compose is already installed
+      shell: "/usr/local/bin/docker-compose -v"
+      register: compose
+      ignore_errors: yes
+      no_log: True
+      failed_when: "'command not found' in compose.stderr"
+
+    - name: Installs docker compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/1.24.0/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+      when: "'docker-compose: No such file or directory' in compose.stderr"
+
+    - name: Ensure docker is enabled to start at boot
+      service:
+        name: docker
+        enabled: yes
+
+    - name: Add the centos user to the docker group
+      user:
+        name: centos
+        groups: docker
+        append: yes
+
+  handlers:
+    - name: restart docker
+      service:
+        name: docker
+        state: restarted
